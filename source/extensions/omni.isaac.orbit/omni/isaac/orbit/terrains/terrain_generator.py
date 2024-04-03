@@ -117,6 +117,7 @@ class TerrainGenerator:
         self._add_terrain_border()
         # combine all the sub-terrains into a single mesh
         self.terrain_mesh = trimesh.util.concatenate(self.terrain_meshes)
+        # print(self.terrain_mesh)
 
         # color the terrain mesh
         if self.cfg.color_scheme == "height":

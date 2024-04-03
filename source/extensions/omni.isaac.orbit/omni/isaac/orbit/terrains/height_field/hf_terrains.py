@@ -264,8 +264,10 @@ def discrete_obstacles_terrain(difficulty: float, cfg: hf_terrains_cfg.HfDiscret
             height = np.random.choice([-obs_height, -obs_height // 2, obs_height // 2, obs_height])
         elif cfg.obstacle_height_mode == "fixed":
             height = obs_height
+        elif cfg.obstacle_height_mode == "range":
+            height = np.random.uniform(cfg.obstacle_height_range[0]/cfg.vertical_scale, cfg.obstacle_height_range[1]/cfg.vertical_scale)
         else:
-            raise ValueError(f"Unknown obstacle height mode '{cfg.obstacle_height_mode}'. Must be 'choice' or 'fixed'.")
+            raise ValueError(f"Unknown obstacle height mode '{cfg.obstacle_height_mode}'. Must be 'choice' or 'fixed' or 'range'.")
         width = int(np.random.choice(obs_width_range))
         length = int(np.random.choice(obs_length_range))
         # sample position
