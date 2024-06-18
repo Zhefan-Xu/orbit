@@ -131,8 +131,10 @@ class HfDiscreteObstaclesTerrainCfg(HfTerrainBaseCfg):
     """
     obstacle_width_range: tuple[float, float] = MISSING
     """The minimum and maximum width of the obstacles (in m)."""
-    obstacle_height_range: tuple[float, float] = MISSING
+    # obstacle_height_range: tuple[float, float] = MISSING
+    obstacle_height_range: list = MISSING
     """The minimum and maximum height of the obstacles (in m)."""
+    obstacle_height_probability: list = MISSING
     num_obstacles: int = MISSING
     """The number of obstacles to generate."""
     platform_width: float = 1.0

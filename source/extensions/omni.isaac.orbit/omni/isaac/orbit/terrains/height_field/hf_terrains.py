@@ -257,6 +257,7 @@ def discrete_obstacles_terrain(difficulty: float, cfg: hf_terrains_cfg.HfDiscret
 
     # create a terrain with a flat platform at the center
     hf_raw = np.zeros((width_pixels, length_pixels))
+    probability_length = len(cfg.obstacle_height_probability)
     # generate the obstacles
     for _ in range(cfg.num_obstacles):
         # sample size
@@ -265,7 +266,12 @@ def discrete_obstacles_terrain(difficulty: float, cfg: hf_terrains_cfg.HfDiscret
         elif cfg.obstacle_height_mode == "fixed":
             height = obs_height
         elif cfg.obstacle_height_mode == "range":
-            height = np.random.uniform(cfg.obstacle_height_range[0]/cfg.vertical_scale, cfg.obstacle_height_range[1]/cfg.vertical_scale)
+            # height = np.random.uniform(cfg.obstacle_height_range[0]/cfg.vertical_scale, cfg.obstacle_height_range[1]/cfg.vertical_scale)
+            random_roll = np.random.choice(probability_length, 1, p=cfg.obstacle_height_probability)
+            for n in range(probability_length):
+                if random_roll == n:
+                    height = np.random.uniform(cfg.obstacle_height_range[n]/cfg.vertical_scale, cfg.obstacle_height_range[n+1]/cfg.vertical_scale)
+                    break
         else:
             raise ValueError(f"Unknown obstacle height mode '{cfg.obstacle_height_mode}'. Must be 'choice' or 'fixed' or 'range'.")
         width = int(np.random.choice(obs_width_range))
