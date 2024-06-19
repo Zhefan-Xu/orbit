@@ -254,38 +254,89 @@ def discrete_obstacles_terrain(difficulty: float, cfg: hf_terrains_cfg.HfDiscret
     # -- position
     obs_x_range = np.arange(0, width_pixels, 4)
     obs_y_range = np.arange(0, length_pixels, 4)
+    obstacles_history = []
 
     # create a terrain with a flat platform at the center
     hf_raw = np.zeros((width_pixels, length_pixels))
-    probability_length = len(cfg.obstacle_height_probability)
     # generate the obstacles
+    # print("Attention!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    # print("height range: ", cfg.obstacle_height_range)
+    probability_length = len(cfg.obstacle_height_probability)
+
+    def good_distance(x, y, width, length, obstacles_hist, bad_range = [2, 10]):
+        # lower_bound_pixels = bad_range[0] / cfg.horizontal_scale
+        # upper_bound_pixels = bad_range[1] / cfg.horizontal_scale
+
+
+        lower_bound_pixels = bad_range[0]
+        upper_bound_pixels = bad_range[1]    
+        # previous x, y, w, l. Calculate for closet points
+        for (xp, yp, wp, lp) in obstacles_hist:
+            dx = abs(xp - x) - width
+            dy = abs(yp - y) - length
+            if dx<0 and dy<0:
+                continue
+            distance = np.sqrt(dx**2 + dy**2)
+            # print("distance: ", distance)
+            # print("lower_bound_pixels: ", lower_bound_pixels)
+            # print("upper_bound_pixels: ", upper_bound_pixels)
+            # print("x: ", x)
+            # print("y: ", y)
+            if distance >= lower_bound_pixels and distance <= upper_bound_pixels:
+                return False
+        return True
+
+
+    # print("Calculation Start!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    num = 0
     for _ in range(cfg.num_obstacles):
-        # sample size
+        # print("Number of cylinders generated: ", num)
+        # sample size        
         if cfg.obstacle_height_mode == "choice":
             height = np.random.choice([-obs_height, -obs_height // 2, obs_height // 2, obs_height])
         elif cfg.obstacle_height_mode == "fixed":
             height = obs_height
         elif cfg.obstacle_height_mode == "range":
-            # height = np.random.uniform(cfg.obstacle_height_range[0]/cfg.vertical_scale, cfg.obstacle_height_range[1]/cfg.vertical_scale)
             random_roll = np.random.choice(probability_length, 1, p=cfg.obstacle_height_probability)
             for n in range(probability_length):
                 if random_roll == n:
                     height = np.random.uniform(cfg.obstacle_height_range[n]/cfg.vertical_scale, cfg.obstacle_height_range[n+1]/cfg.vertical_scale)
                     break
+
+
+            # height = np.random.uniform(cfg.obstacle_height_range[0]/cfg.vertical_scale, cfg.obstacle_height_range[1]/cfg.vertical_scale)
         else:
             raise ValueError(f"Unknown obstacle height mode '{cfg.obstacle_height_mode}'. Must be 'choice' or 'fixed' or 'range'.")
-        width = int(np.random.choice(obs_width_range))
-        length = int(np.random.choice(obs_length_range))
-        # sample position
-        x_start = int(np.random.choice(obs_x_range))
-        y_start = int(np.random.choice(obs_y_range))
+        
+        attempts = 0
+        # print("Start choosing location!!")
+        while attempts < 100000:
+            width = int(np.random.choice(obs_width_range))
+            length = int(np.random.choice(obs_length_range))
+            # sample position
+            x_start = int(np.random.choice(obs_x_range))
+            y_start = int(np.random.choice(obs_y_range))
+            if x_start + width > width_pixels:
+                x_start = width_pixels - width
+            if y_start + length > length_pixels:
+                y_start = length_pixels - length
+            
+            if good_distance(x_start, y_start, width, length, obstacles_history):
+                break
+            elif obstacles_history == []:
+                break
+            # print("attempts when generated: ", attempts)
+            # print("obstacles_history: ", obstacles_history)
+            attempts += 1
+        # print("attempts when generated: ", attempts)
+        obstacles_history.append((x_start, y_start, width, length))
+        num += 1
         # clip start position to the terrain
-        if x_start + width > width_pixels:
-            x_start = width_pixels - width
-        if y_start + length > length_pixels:
-            y_start = length_pixels - length
+        # print("x_start: ", x_start)
+        # print("y_start: ", y_start)
         # add to terrain
         hf_raw[x_start : x_start + width, y_start : y_start + length] = height
+    # print("Calculation End!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")    
     # clip the terrain to the platform
     x1 = (width_pixels - platform_width) // 2
     x2 = (width_pixels + platform_width) // 2
